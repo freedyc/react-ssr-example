@@ -11,7 +11,7 @@ function reducer(state = initialState, action) {
 }
 
 export function createClientStore() {
-    return createStore(reducer);
+    return createStore(reducer, { data: window.REDUX_STORE });
 }
 
 export function createServerStore() {

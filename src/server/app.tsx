@@ -7,29 +7,29 @@ import serve from 'koa-static';
 import { StaticRouter, matchPath } from "react-router-dom";
 import { renderToString } from 'react-dom/server'
 import { Provider } from 'react-redux';
-
 import { createServerStore } from '../shared/store';
-import routes from '../shared/route';
+import routes from '../shared/Routes';
 
-const store = createServerStore();
 const app = new Koa();
 const router = new Router();
-router.get(["/","/about"], (ctx, next) => {
+const store = createServerStore();
 
-    // inside a request
+
+router.get(["/","/about"], async (ctx) => {
     const promises = [];
     // use `some` to imitate `<Switch>` behavior of selecting only
     // the first to match
     routes.some(route => {
         // use `matchPath` here
-        const match = matchPath(ctx.req.path, route);
-        if (match) promises.push(route.loadData(match));
-        return match;
+        const match = matchPath(ctx.request.url, route);
+        // console.log(JSON.stringify(match));
+      if (match && route.loadData) {
+        promises.push(route.loadData(store));
+      }
+      return match;
     });
-
-    Promise.all(promises).then(data => {
-        // do something w/ the data so the client
-        // can access it then render the app
+    
+    await Promise.all(promises).then((data) => {
         const html = renderToString(
             <Provider store={store}>
                 <StaticRouter location={ctx.req.url}>
@@ -46,8 +46,9 @@ router.get(["/","/about"], (ctx, next) => {
                 <title>React SSR</title>
             </head>
             <body>
-                <script>window.REDUX_STORE = ${JSON.stringify(data)}</script>
+                <script type="text/javascript">window.REDUX_STORE="${data}"</script>
                 <div id="root">${html}</div>
+                <script src="bundle.js"></script>
             </body>
             </html>
         `
@@ -55,10 +56,10 @@ router.get(["/","/about"], (ctx, next) => {
 })
 
 router.get("/getData", (ctx) => {
-    ctx.body = { code: 0, message: "", data: "后端返回的数据"}
+    ctx.body = { code: 0, message: "", data: "后端返回的数据" }
 })
 
-app.use(serve('dist'));
+app.use(serve('public'));
 app.use(router.routes()).use(router.allowedMethods());
 
 app.listen(3000, () => {

@@ -1,48 +1,51 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 import { connect } from 'react-redux';
-import { Dispatch } from 'redux';
 
 interface IProps {
     data: string,
-    dispatch: Dispatch,
 }
-class About extends Component {
-    constructor(props: IProps){
-        super(props);
-        this.state = {
-            data: ''
-        }
+class About extends Component<IProps> {
+    state = {
+        data: ""
     }
 
-    componentDidMount() {
-        if (!this.props.data) {
-
-        }
-    }
-
-    static loadData() {
-        return new Promise((resolve, reject) => {
-            axios.get('http:/localhost:3000/getData').then((res) => {
+    static loadData = (store) => {
+        return new Promise((resolve) => {
+            axios.get('http://localhost:3000/getData').then((res) => {
+                console.log("----------", res);
+                store.dispatch({
+                    type: "CHANGE_DATA",
+                    payload: {
+                        data: res.data.data,
+                    }
+                })
                 resolve(res.data.data);
             });
         })
     }
 
+    componentDidMount() {
+        if(!this.props.data) {
+            axios.get('/getData').then((res) => {
+                console.log(res);
+                this.setState({ data: res.data.data });
+            });
+        }
+    }
+
     render() {
         return (
-            <div>{this.props.data}</div>
+        <div>{this.state.data}TTTTTT{this.props.data}</div>
         )
     }
 }
-
-function mapStateToProps(state) {
-    return {
-        data: state.data,
-    }
-}
-
-function mapDispatchToProps(dispatch) {
+const mapDispatchToProps = (dispatch) => {
     return { dispatch }
 }
-export default connect(mapStateToProps, mapDispatchToProps)(About);
+
+const mapStateToProps = (state) => {
+    console.log(state);
+    return { data: state.data }
+}
+export default connect(mapStateToProps, mapDispatchToProps)(About)
